@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Built-By: akhimich
+Build-Jdk: 1.7.0_45
+Specification-Title: 3levelmemcache
+Specification-Version: 0.0.1-SNAPSHOT
+Implementation-Title: 3levelmemcache
+Implementation-Version: 0.0.1-SNAPSHOT
+Implementation-Vendor-Id: com.salesforce.ddc.threelevelmemcache
+Created-By: Maven Integration for Eclipse
+

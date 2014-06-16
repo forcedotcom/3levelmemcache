@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:jee="http://www.springframework.org/schema/jee"
+	xmlns:c="http://www.springframework.org/schema/c" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:security="http://www.springframework.org/schema/security"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+      http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+      http://www.springframework.org/schema/aop
+      http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+      http://www.springframework.org/schema/tx
+      http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+      http://www.springframework.org/schema/context 
+      http://www.springframework.org/schema/context/spring-context-3.0.xsd
+      http://www.springframework.org/schema/jee
+      http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+      http://www.springframework.org/schema/security 
+      http://www.springframework.org/schema/security/spring-security-3.0.xsd
+      http://www.springframework.org/schema/util 
+      http://www.springframework.org/schema/util/spring-util-3.0.xsd">
+      
+    <!-- ******************************************************************** -->
+    <!-- Properties Configuration -->
+    <!-- ******************************************************************** -->
+   	<context:property-placeholder ignore-resource-not-found="true" ignore-unresolvable="true" location="classpath:dc_cachecommon.config.properties" order="3"/>
+    <context:property-placeholder ignore-resource-not-found="true" ignore-unresolvable="true" location="file:${CONFIGS}/dc_cachecommon.env.properties" order="2"/>
+    <!-- ******************************************************************** -->
+    <!-- Component Scan-->
+    <!-- ******************************************************************** -->
+	<context:component-scan base-package="com.salesforce.ddc.dc_cachecommon" scoped-proxy="interfaces" />
+	<!-- ******************************************************************** -->
+	<!-- Primary memcached server-->
+	<!-- ******************************************************************** -->
+	<bean id="memcachedClientPrimaryFactory" class="com.salesforce.ddc.dc_cachecommon.MemcachedClientFactoryBean"
+		p:servers="${memcached.primary.nodeAddresses}" 
+		p:binary="${memcached.protocol.binary}" 
+		p:bucketName="${memcached.membase.primary.bucketName}"
+		p:membaseURL="${memcached.membase.primary.URL}"
+		p:operationTimeout="${memcached.operationTimeOutMsec}"
+		p:opQueueMaxBlockTime="${memcached.operationQueueMaxBlockTimeMsec}"
+		p:queueSize="${memcached.operationQueueSize}"
+		/>
+	<bean id="memcachedClientPrimaryTarget" factory-bean="memcachedClientPrimaryFactory" factory-method="getObject" scope="prototype" destroy-method="shutdown"/>	
+	<bean id="memcachedClientPrimaryTargetSource" class="com.salesforce.ddc.dc_cachecommon.MemcachedConnectionsRoundRobinPoolTargetSource" p:maxIdle="${memcached.pool.size}" p:maxSize="${memcached.pool.size}" p:timeBetweenKeepAliveRunsSecs="${memcached.pool.timeBetweenKeepAliveRunsSecs}" 
+		destroy-method="destroy" p:targetBeanName="memcachedClientPrimaryTarget"/>
+    <bean id="memcachedClientPrimary" class="org.springframework.aop.framework.ProxyFactoryBean" p:targetSource-ref="memcachedClientPrimaryTargetSource"/>
+    <bean id="cacheServiceMemcachedPrimary" class="com.salesforce.ddc.dc_cachecommon.MemcachedCacheService" scope="prototype">
+		<description>PRIMARY</description>
+		<constructor-arg index="0" ref="memcachedClientPrimary" />
+		<property name="synchronousPut" value="true" />
+		<property name="timeOutBulkOperation" value="${memcached.operationTimeOutBulkMsec}"/>
+		<property name="timeOutSingleOperation" value="${memcached.operationTimeOutMsec}"/>
+		<property name="listener" ref="cacheServiceMemcachedPrimaryListener"/>
+	</bean> 
+	
+	 <bean id="cacheServiceMemcachedPrimaryListenerFactory" class="com.salesforce.ddc.dc_cachecommon.CacheListenerAnnotationBeanFactory">
+    	<constructor-arg value="com.salesforce.ddc.dc_cachecommon.exposed.listener.MemcachedPrimaryCacheListener"/>
+    </bean>
+    <bean id="cacheServiceMemcachedPrimaryListener" factory-bean="cacheServiceMemcachedPrimaryListenerFactory" factory-method="getObject" />
+    
+    <!-- ******************************************************************** -->
+	<!-- Secondary memcached server-->
+	<!-- ******************************************************************** -->
+    <bean id="memcachedClientSecondaryFactory" class="com.salesforce.ddc.dc_cachecommon.MemcachedClientFactoryBean"
+		p:servers="${memcached.secondary.nodeAddresses}" 
+		p:binary="${memcached.protocol.binary}" 
+		p:bucketName="${memcached.membase.secondary.bucketName}"
+		p:membaseURL="${memcached.membase.secondary.URL}"
+		p:operationTimeout="${memcached.operationTimeOutMsec}"
+		p:opQueueMaxBlockTime="${memcached.operationQueueMaxBlockTimeMsec}"
+		p:queueSize="${memcached.operationQueueSize}"
+		/>
+	<bean id="memcachedClientSecondaryTarget" factory-bean="memcachedClientSecondaryFactory" factory-method="getObject" scope="prototype" destroy-method="shutdown"/>	
+	<bean id="memcachedClientSecondaryTargetSource" class="com.salesforce.ddc.dc_cachecommon.MemcachedConnectionsRoundRobinPoolTargetSource" p:maxIdle="${memcached.pool.size}" p:maxSize="${memcached.pool.size}"  p:timeBetweenKeepAliveRunsSecs="${memcached.pool.timeBetweenKeepAliveRunsSecs}"
+	 destroy-method="destroy" p:targetBeanName="memcachedClientSecondaryTarget"/>
+    <bean id="memcachedClientSecondary" class="org.springframework.aop.framework.ProxyFactoryBean" p:targetSource-ref="memcachedClientSecondaryTargetSource"/>
+    
+    <bean id="cacheServiceMemcachedSecondaryListenerFactory" class="com.salesforce.ddc.dc_cachecommon.CacheListenerAnnotationBeanFactory">
+    	<constructor-arg value="com.salesforce.ddc.dc_cachecommon.exposed.listener.MemcachedSecondaryCacheListener"/>
+    </bean>
+    <bean id="cacheServiceMemcachedSecondaryListener" factory-bean="cacheServiceMemcachedSecondaryListenerFactory" factory-method="getObject" />
+	<bean id="cacheServiceMemcachedSecondary" class="com.salesforce.ddc.dc_cachecommon.MemcachedCacheService" scope="prototype">
+		<description>SECONDARY</description>
+		<constructor-arg index="0" ref="memcachedClientSecondary" />
+		<property name="synchronousPut" value="false" />
+		<property name="timeOutBulkOperation" value="${memcached.operationTimeOutBulkMsec}"/>
+		<property name="timeOutSingleOperation" value="${memcached.operationTimeOutMsec}"/>
+		<property name="listener" ref="cacheServiceMemcachedSecondaryListener"/>
+	</bean> 
+	
+	
+	<!-- ******************************************************************** -->
+	<!-- Cloud Cache configuration -->
+	<!-- ******************************************************************** -->
+	 <bean id="cacheServiceListenerFactory" class="com.salesforce.ddc.dc_cachecommon.CacheListenerAnnotationBeanFactory">
+    	<constructor-arg value="com.salesforce.ddc.dc_cachecommon.exposed.listener.CloudCacheListener"/>
+    </bean>
+    <bean id="cacheServiceListener" factory-bean="cacheServiceListenerFactory" factory-method="getObject" />
+    
+     <bean id="cacheValueProxyFactoryBeanFactory" class="com.salesforce.ddc.dc_cachecommon.proxy.ValueProxyFactoryBeanFactory">
+    	<constructor-arg value="com.salesforce.ddc.dc_cachecommon.exposed.proxy.CacheProxyFactory"/>
+    </bean>
+    <bean id="cacheValueProxyFactory" factory-bean="cacheValueProxyFactoryBeanFactory" factory-method="getObject" />
+    
+	<bean id="cacheService" class="com.salesforce.ddc.dc_cachecommon.CloudCacheService" destroy-method="shutdown">
+		<constructor-arg index="0" ref="firstLevelCacheService"/>
+		<constructor-arg index="1" ref="cacheServiceMemcachedPrimary" />
+		<constructor-arg index="2" ref="cacheServiceMemcachedSecondary" />
+		<property name="listener" ref="cacheServiceListener"/>
+		<property name="proxyFactory" ref="cacheValueProxyFactory"/>
+	</bean>
+	<!-- ******************************************************************** -->
+	<!-- First Level Cache configuration -->
+	<!-- ******************************************************************** -->
+	 <bean id="firstLevelCacheServiceListenerFactory" class="com.salesforce.ddc.dc_cachecommon.CacheListenerAnnotationBeanFactory">
+    	<constructor-arg value="com.salesforce.ddc.dc_cachecommon.exposed.listener.FirstLevelCacheListener"/>
+    </bean>
+    <bean id="firstLevelCacheServiceListener" factory-bean="firstLevelCacheServiceListenerFactory" factory-method="getObject" />
+    
+    <bean id="firstLevelCacheStrategyFactory" class="com.salesforce.ddc.dc_cachecommon.strategy.CachingStrategyAnnotationBeanFactory">
+    	<constructor-arg value="com.salesforce.ddc.dc_cachecommon.exposed.strategy.FirstLevelCacheStrategy"/>
+    </bean>
+    <bean id="firstLevelCacheStrategy" factory-bean="firstLevelCacheStrategyFactory" factory-method="getObject" />
+    
+    
+   	<bean id="firstLevelCacheService" class="com.salesforce.ddc.dc_cachecommon.FirstLevelCacheService" destroy-method="shutdown" scope="singleton">
+		<constructor-arg index="0" value="${cache.l1.size}"/>
+		<property name="listener" ref="firstLevelCacheServiceListener"/>
+		<property name="cachingStrategy" ref="firstLevelCacheStrategy"/>
+	</bean>
+</beans>
