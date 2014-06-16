@@ -5,6 +5,8 @@ All modern server side applications use memcached as fast caching technology. Me
 
 Data.com has built own caching framework on top of provided memcached low level client. The distinguishing part of this framework:
 
-it allows you to operate data at higher level. No worries about serialization, about sync/async execution.
-it allows you to write into 2 memcached storages
-it adds local or JVM cache on top of memcached storages. That gives a huge boost in performance in some cases.
+* it allows you to operate data at higher level. No worries about serialization, about sync/async execution.
+
+* it allows you to write into 2 memcached storages
+
+* it adds local or JVM cache on top of memcached storages. That gives a huge boost in performance in some cases.
