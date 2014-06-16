@@ -12,6 +12,8 @@ The distinguishing part of this framework:
 * it allows you to write into 2 memcached storages
 * it adds local or JVM cache on top of memcached storages. That gives a huge boost in performance in some cases. 
 
+3levelmemcache uses spring but it also possible to instantiate objects manually
+
 # Supported memcached providers
 * Couchbase or Membase
 * plain memcached
