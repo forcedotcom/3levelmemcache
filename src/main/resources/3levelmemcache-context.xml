@@ -24,16 +24,16 @@
     <!-- ******************************************************************** -->
     <!-- Properties Configuration -->
     <!-- ******************************************************************** -->
-   	<context:property-placeholder ignore-resource-not-found="true" ignore-unresolvable="true" location="classpath:dc_cachecommon.config.properties" order="3"/>
-    <context:property-placeholder ignore-resource-not-found="true" ignore-unresolvable="true" location="file:${CONFIGS}/dc_cachecommon.env.properties" order="2"/>
+   	<context:property-placeholder ignore-resource-not-found="true" ignore-unresolvable="true" location="classpath:3levelmemcache.config.properties" order="3"/>
+    <context:property-placeholder ignore-resource-not-found="true" ignore-unresolvable="true" location="file:${CONFIGS}/3levelmemcache.env.properties" order="2"/>
     <!-- ******************************************************************** -->
     <!-- Component Scan-->
     <!-- ******************************************************************** -->
-	<context:component-scan base-package="com.salesforce.ddc.dc_cachecommon" scoped-proxy="interfaces" />
+	<context:component-scan base-package="com.salesforce.ddc.threelevelmemcache" scoped-proxy="interfaces" />
 	<!-- ******************************************************************** -->
 	<!-- Primary memcached server-->
 	<!-- ******************************************************************** -->
-	<bean id="memcachedClientPrimaryFactory" class="com.salesforce.ddc.dc_cachecommon.MemcachedClientFactoryBean"
+	<bean id="memcachedClientPrimaryFactory" class="com.salesforce.ddc.threelevelmemcache.MemcachedClientFactoryBean"
 		p:servers="${memcached.primary.nodeAddresses}" 
 		p:binary="${memcached.protocol.binary}" 
 		p:bucketName="${memcached.membase.primary.bucketName}"
@@ -43,10 +43,10 @@
 		p:queueSize="${memcached.operationQueueSize}"
 		/>
 	<bean id="memcachedClientPrimaryTarget" factory-bean="memcachedClientPrimaryFactory" factory-method="getObject" scope="prototype" destroy-method="shutdown"/>	
-	<bean id="memcachedClientPrimaryTargetSource" class="com.salesforce.ddc.dc_cachecommon.MemcachedConnectionsRoundRobinPoolTargetSource" p:maxIdle="${memcached.pool.size}" p:maxSize="${memcached.pool.size}" p:timeBetweenKeepAliveRunsSecs="${memcached.pool.timeBetweenKeepAliveRunsSecs}" 
+	<bean id="memcachedClientPrimaryTargetSource" class="com.salesforce.ddc.threelevelmemcache.MemcachedConnectionsRoundRobinPoolTargetSource" p:maxIdle="${memcached.pool.size}" p:maxSize="${memcached.pool.size}" p:timeBetweenKeepAliveRunsSecs="${memcached.pool.timeBetweenKeepAliveRunsSecs}" 
 		destroy-method="destroy" p:targetBeanName="memcachedClientPrimaryTarget"/>
     <bean id="memcachedClientPrimary" class="org.springframework.aop.framework.ProxyFactoryBean" p:targetSource-ref="memcachedClientPrimaryTargetSource"/>
-    <bean id="cacheServiceMemcachedPrimary" class="com.salesforce.ddc.dc_cachecommon.MemcachedCacheService" scope="prototype">
+    <bean id="cacheServiceMemcachedPrimary" class="com.salesforce.ddc.threelevelmemcache.MemcachedCacheService" scope="prototype">
 		<description>PRIMARY</description>
 		<constructor-arg index="0" ref="memcachedClientPrimary" />
 		<property name="synchronousPut" value="true" />
@@ -55,15 +55,15 @@
 		<property name="listener" ref="cacheServiceMemcachedPrimaryListener"/>
 	</bean> 
 	
-	 <bean id="cacheServiceMemcachedPrimaryListenerFactory" class="com.salesforce.ddc.dc_cachecommon.CacheListenerAnnotationBeanFactory">
-    	<constructor-arg value="com.salesforce.ddc.dc_cachecommon.exposed.listener.MemcachedPrimaryCacheListener"/>
+	 <bean id="cacheServiceMemcachedPrimaryListenerFactory" class="com.salesforce.ddc.threelevelmemcache.CacheListenerAnnotationBeanFactory">
+    	<constructor-arg value="com.salesforce.ddc.threelevelmemcache.exposed.listener.MemcachedPrimaryCacheListener"/>
     </bean>
     <bean id="cacheServiceMemcachedPrimaryListener" factory-bean="cacheServiceMemcachedPrimaryListenerFactory" factory-method="getObject" />
     
     <!-- ******************************************************************** -->
 	<!-- Secondary memcached server-->
 	<!-- ******************************************************************** -->
-    <bean id="memcachedClientSecondaryFactory" class="com.salesforce.ddc.dc_cachecommon.MemcachedClientFactoryBean"
+    <bean id="memcachedClientSecondaryFactory" class="com.salesforce.ddc.threelevelmemcache.MemcachedClientFactoryBean"
 		p:servers="${memcached.secondary.nodeAddresses}" 
 		p:binary="${memcached.protocol.binary}" 
 		p:bucketName="${memcached.membase.secondary.bucketName}"
@@ -73,15 +73,15 @@
 		p:queueSize="${memcached.operationQueueSize}"
 		/>
 	<bean id="memcachedClientSecondaryTarget" factory-bean="memcachedClientSecondaryFactory" factory-method="getObject" scope="prototype" destroy-method="shutdown"/>	
-	<bean id="memcachedClientSecondaryTargetSource" class="com.salesforce.ddc.dc_cachecommon.MemcachedConnectionsRoundRobinPoolTargetSource" p:maxIdle="${memcached.pool.size}" p:maxSize="${memcached.pool.size}"  p:timeBetweenKeepAliveRunsSecs="${memcached.pool.timeBetweenKeepAliveRunsSecs}"
+	<bean id="memcachedClientSecondaryTargetSource" class="com.salesforce.ddc.threelevelmemcache.MemcachedConnectionsRoundRobinPoolTargetSource" p:maxIdle="${memcached.pool.size}" p:maxSize="${memcached.pool.size}"  p:timeBetweenKeepAliveRunsSecs="${memcached.pool.timeBetweenKeepAliveRunsSecs}"
 	 destroy-method="destroy" p:targetBeanName="memcachedClientSecondaryTarget"/>
     <bean id="memcachedClientSecondary" class="org.springframework.aop.framework.ProxyFactoryBean" p:targetSource-ref="memcachedClientSecondaryTargetSource"/>
     
-    <bean id="cacheServiceMemcachedSecondaryListenerFactory" class="com.salesforce.ddc.dc_cachecommon.CacheListenerAnnotationBeanFactory">
-    	<constructor-arg value="com.salesforce.ddc.dc_cachecommon.exposed.listener.MemcachedSecondaryCacheListener"/>
+    <bean id="cacheServiceMemcachedSecondaryListenerFactory" class="com.salesforce.ddc.threelevelmemcache.CacheListenerAnnotationBeanFactory">
+    	<constructor-arg value="com.salesforce.ddc.threelevelmemcache.exposed.listener.MemcachedSecondaryCacheListener"/>
     </bean>
     <bean id="cacheServiceMemcachedSecondaryListener" factory-bean="cacheServiceMemcachedSecondaryListenerFactory" factory-method="getObject" />
-	<bean id="cacheServiceMemcachedSecondary" class="com.salesforce.ddc.dc_cachecommon.MemcachedCacheService" scope="prototype">
+	<bean id="cacheServiceMemcachedSecondary" class="com.salesforce.ddc.threelevelmemcache.MemcachedCacheService" scope="prototype">
 		<description>SECONDARY</description>
 		<constructor-arg index="0" ref="memcachedClientSecondary" />
 		<property name="synchronousPut" value="false" />
@@ -94,17 +94,17 @@
 	<!-- ******************************************************************** -->
 	<!-- Cloud Cache configuration -->
 	<!-- ******************************************************************** -->
-	 <bean id="cacheServiceListenerFactory" class="com.salesforce.ddc.dc_cachecommon.CacheListenerAnnotationBeanFactory">
-    	<constructor-arg value="com.salesforce.ddc.dc_cachecommon.exposed.listener.CloudCacheListener"/>
+	 <bean id="cacheServiceListenerFactory" class="com.salesforce.ddc.threelevelmemcache.CacheListenerAnnotationBeanFactory">
+    	<constructor-arg value="com.salesforce.ddc.threelevelmemcache.exposed.listener.CloudCacheListener"/>
     </bean>
     <bean id="cacheServiceListener" factory-bean="cacheServiceListenerFactory" factory-method="getObject" />
     
-     <bean id="cacheValueProxyFactoryBeanFactory" class="com.salesforce.ddc.dc_cachecommon.proxy.ValueProxyFactoryBeanFactory">
-    	<constructor-arg value="com.salesforce.ddc.dc_cachecommon.exposed.proxy.CacheProxyFactory"/>
+     <bean id="cacheValueProxyFactoryBeanFactory" class="com.salesforce.ddc.threelevelmemcache.proxy.ValueProxyFactoryBeanFactory">
+    	<constructor-arg value="com.salesforce.ddc.threelevelmemcache.exposed.proxy.CacheProxyFactory"/>
     </bean>
     <bean id="cacheValueProxyFactory" factory-bean="cacheValueProxyFactoryBeanFactory" factory-method="getObject" />
     
-	<bean id="cacheService" class="com.salesforce.ddc.dc_cachecommon.CloudCacheService" destroy-method="shutdown">
+	<bean id="cacheService" class="com.salesforce.ddc.threelevelmemcache.CloudCacheService" destroy-method="shutdown">
 		<constructor-arg index="0" ref="firstLevelCacheService"/>
 		<constructor-arg index="1" ref="cacheServiceMemcachedPrimary" />
 		<constructor-arg index="2" ref="cacheServiceMemcachedSecondary" />
@@ -114,18 +114,18 @@
 	<!-- ******************************************************************** -->
 	<!-- First Level Cache configuration -->
 	<!-- ******************************************************************** -->
-	 <bean id="firstLevelCacheServiceListenerFactory" class="com.salesforce.ddc.dc_cachecommon.CacheListenerAnnotationBeanFactory">
-    	<constructor-arg value="com.salesforce.ddc.dc_cachecommon.exposed.listener.FirstLevelCacheListener"/>
+	 <bean id="firstLevelCacheServiceListenerFactory" class="com.salesforce.ddc.threelevelmemcache.CacheListenerAnnotationBeanFactory">
+    	<constructor-arg value="com.salesforce.ddc.threelevelmemcache.exposed.listener.FirstLevelCacheListener"/>
     </bean>
     <bean id="firstLevelCacheServiceListener" factory-bean="firstLevelCacheServiceListenerFactory" factory-method="getObject" />
     
-    <bean id="firstLevelCacheStrategyFactory" class="com.salesforce.ddc.dc_cachecommon.strategy.CachingStrategyAnnotationBeanFactory">
-    	<constructor-arg value="com.salesforce.ddc.dc_cachecommon.exposed.strategy.FirstLevelCacheStrategy"/>
+    <bean id="firstLevelCacheStrategyFactory" class="com.salesforce.ddc.threelevelmemcache.strategy.CachingStrategyAnnotationBeanFactory">
+    	<constructor-arg value="com.salesforce.ddc.threelevelmemcache.exposed.strategy.FirstLevelCacheStrategy"/>
     </bean>
     <bean id="firstLevelCacheStrategy" factory-bean="firstLevelCacheStrategyFactory" factory-method="getObject" />
     
     
-   	<bean id="firstLevelCacheService" class="com.salesforce.ddc.dc_cachecommon.FirstLevelCacheService" destroy-method="shutdown" scope="singleton">
+   	<bean id="firstLevelCacheService" class="com.salesforce.ddc.threelevelmemcache.FirstLevelCacheService" destroy-method="shutdown" scope="singleton">
 		<constructor-arg index="0" value="${cache.l1.size}"/>
 		<property name="listener" ref="firstLevelCacheServiceListener"/>
 		<property name="cachingStrategy" ref="firstLevelCacheStrategy"/>

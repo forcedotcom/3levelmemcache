@@ -209,8 +209,18 @@ public interface CacheService {
      */
     Map<SocketAddress, Map<String, String>> getStats();
 
+    /**
+     * Get cache listener
+     * 
+     * @return
+     */
     CacheListener getCacheListener();
 
+    /**
+     * Set cache listener
+     * 
+     * @param listener
+     */
     void setListener(CacheListener listener);
 
 }
